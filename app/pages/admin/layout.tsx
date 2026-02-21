@@ -5,7 +5,7 @@ import Sidebar from "./_components/Sidebar";
 import Topbar from "./_components/Topbar";
 
 export const metadata = {
-  title: "SchemeOS — Admin",
+  title: "Aula — Admin",
   description: "Finance & Insurance Scheme Management Console",
 };
 
