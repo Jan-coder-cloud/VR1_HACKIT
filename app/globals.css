@@ -1,37 +1,3 @@
-<<<<<<< HEAD
-﻿@import "tailwindcss";
-
-:root {
-  --background: rgba(239, 246, 255, 0.4);
-  --foreground: #1e3a8a;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-body {
-  background:
-    radial-gradient(1100px 500px at -10% -20%, rgba(59, 130, 246, 0.25), transparent 60%),
-    radial-gradient(900px 450px at 110% 10%, rgba(37, 99, 235, 0.2), transparent 65%),
-    linear-gradient(170deg, rgba(239, 246, 255, 0.4) 0%, rgba(219, 234, 254, 0.45) 55%, rgba(191, 219, 254, 0.5) 100%);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
-}
-
-@keyframes drift {
-  0% { transform: translateY(0px) translateX(0px); opacity: 0.85; }
-  50% { transform: translateY(-10px) translateX(4px); opacity: 1; }
-  100% { transform: translateY(0px) translateX(0px); opacity: 0.85; }
-}
-
-.space-orb {
-  animation: drift 7s ease-in-out infinite;
-}
-=======
 @import url('https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap');
 
 @import "tailwindcss";
@@ -42,4 +8,3 @@ body{
   font-optical-sizing: auto;
   font-size: 16px;
 }
->>>>>>> 858bcce03bd1bfd9d6f8b2c2ba72a0149a5080f6

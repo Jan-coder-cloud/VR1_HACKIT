@@ -7,17 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-<<<<<<< HEAD
     "seed:schemes": "node scripts/upload-mock-schemes.mjs",
     "seed:users": "node scripts/upload-mock-users.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.49.8",
     "@xenova/transformers": "^2.17.2",
-=======
-    "video": "node --env-file=.env --experimental-strip-types components/Video.ts"
-  },
-  "dependencies": {
+    "video": "node --env-file=.env --experimental-strip-types components/Video.ts",
     "@ai-sdk/react": "^3.0.99",
     "@google/generative-ai": "^0.24.1",
     "@runwayml/sdk": "^3.11.0",
@@ -25,7 +21,6 @@
     "ai": "^6.0.97",
     "@supabase/supabase-js": "^2.97.0",
     "lucide-react": "^0.575.0",
->>>>>>> 858bcce03bd1bfd9d6f8b2c2ba72a0149a5080f6
     "next": "16.1.6",
     "openai": "^4.104.0",
     "react": "19.2.3",
