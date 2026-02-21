@@ -77,6 +77,10 @@ type RankedUser = {
   explanation: string;
   bundle: string[];
   age: number | null;
+  dependents: number | null;
+  areaType: "rural" | "urban" | null;
+  rationCardType: string | null;
+  gender: string;
   cibilScore: number | null;
   transactionCount: number | null;
 };
@@ -322,6 +326,13 @@ function getUserAge(user: BeneficiaryUser): number | null {
   return toSafeNumber(getCriteriaValue(user, "age"));
 }
 
+function getDependents(user: BeneficiaryUser): number | null {
+  if (typeof user.dependents === "number" && Number.isFinite(user.dependents)) {
+    return user.dependents;
+  }
+  return toSafeNumber(getCriteriaValue(user, "dependents"));
+}
+
 function getUserCibilScore(user: BeneficiaryUser): number | null {
   const direct = toSafeNumber(getCriteriaValue(user, "cibilScore"));
   return direct ?? toSafeNumber(getCriteriaValue(user, "creditScore"));
@@ -340,10 +351,22 @@ function getUserTransactionRecencyDays(user: BeneficiaryUser): number | null {
   return toSafeNumber(getCriteriaValue(user, "lastTransactionDaysAgo"));
 }
 
+function getRationCardType(user: BeneficiaryUser): string | null {
+  const direct = normalizeString(user.ration_card_type);
+  if (direct) return direct.toLowerCase();
+  return normalizeString(getCriteriaValue(user, "rationCardType"))?.toLowerCase() ?? null;
+}
+
+function getGender(user: BeneficiaryUser): string {
+  const direct = normalizeString(user.gender);
+  if (direct) return direct.toLowerCase();
+  return normalizeString(getCriteriaValue(user, "gender"))?.toLowerCase() ?? "unknown";
+}
+
 function getAreaType(user: BeneficiaryUser): "rural" | "urban" | null {
-  const direct = normalizeString(getCriteriaValue(user, "areaType"));
-  if (direct?.toLowerCase() === "rural") return "rural";
-  if (direct?.toLowerCase() === "urban") return "urban";
+  const area = normalizeString(user.area_type) ?? normalizeString(getCriteriaValue(user, "areaType"));
+  if (area?.toLowerCase() === "rural") return "rural";
+  if (area?.toLowerCase() === "urban") return "urban";
 
   const tags = user.eligibility_tags.map((tag) => tag.toLowerCase());
   if (tags.includes("rural")) return "rural";
@@ -398,7 +421,7 @@ function passStrictEligibility(user: BeneficiaryUser, rules: EligibilityRules) {
   }
 
   if (rules.requiredRationCard) {
-    const rationCardType = normalizeString(getCriteriaValue(user, "rationCardType"))?.toLowerCase();
+    const rationCardType = getRationCardType(user);
     if (!rationCardType || rationCardType !== rules.requiredRationCard) {
       return false;
     }
@@ -410,7 +433,7 @@ function passStrictEligibility(user: BeneficiaryUser, rules: EligibilityRules) {
   }
 
   if (rules.minDependents !== null) {
-    const dependents = toSafeNumber(getCriteriaValue(user, "dependents"));
+    const dependents = getDependents(user);
     if (dependents === null || dependents < rules.minDependents) return false;
   }
 
@@ -471,17 +494,22 @@ function vulnerabilityScore(user: BeneficiaryUser) {
   const income = user.annual_income ?? 0;
   const incomeComponent = income > 0 ? clamp((300000 - income) / 300000) : 0.2;
   const householdComponent = clamp((user.household_size ?? 1) / 8);
+  const dependentsComponent = clamp((getDependents(user) ?? 0) / 6);
   const ruralComponent = getAreaType(user) === "rural" ? 1 : 0;
+  const rationCard = getRationCardType(user);
+  const rationComponent = rationCard === "bpl" || rationCard === "antyodaya" ? 1 : 0;
   const vulnerableComponent = user.is_vulnerable ? 1 : 0;
   const age = getUserAge(user);
   const ageComponent = age !== null && age >= 60 ? 1 : age !== null && age <= 25 ? 0.5 : 0;
 
   return (
-    vulnerableComponent * 0.4 +
-    incomeComponent * 0.22 +
-    householdComponent * 0.18 +
+    vulnerableComponent * 0.34 +
+    incomeComponent * 0.18 +
+    householdComponent * 0.12 +
+    dependentsComponent * 0.1 +
     ruralComponent * 0.1 +
-    ageComponent * 0.1
+    rationComponent * 0.08 +
+    ageComponent * 0.08
   );
 }
 
@@ -537,7 +565,7 @@ function fairnessForUsers(users: BeneficiaryUser[]): FairnessMetrics {
   const incomeCounts: Record<string, number> = {};
 
   for (const user of users) {
-    const gender = normalizeString(getCriteriaValue(user, "gender"))?.toLowerCase() ?? "unknown";
+    const gender = getGender(user);
     const area = getAreaType(user) ?? "unknown";
     const group = incomeGroup(user.annual_income ?? null);
     genderCounts[gender] = (genderCounts[gender] ?? 0) + 1;
@@ -788,7 +816,11 @@ function deterministicExplainability(args: {
   const age = getUserAge(args.user);
   const cibil = getUserCibilScore(args.user);
   const txCount = getUserTransactionCount(args.user);
-  return `Eligible due to rules alignment (income ${income}, ${area}). Profile signals: age ${age ?? "N/A"}, CIBIL ${
+  const dependents = getDependents(args.user);
+  const rationCard = getRationCardType(args.user);
+  return `Eligible due to rules alignment (income ${income}, ${area}). Profile signals: age ${
+    age ?? "N/A"
+  }, dependents ${dependents ?? "N/A"}, ration card ${rationCard ?? "N/A"}, CIBIL ${
     cibil ?? "N/A"
   }, transactions ${txCount ?? "N/A"}. Financial readiness ${Math.round(
     args.financialReadiness * 100
@@ -841,9 +873,9 @@ export async function runFinancialRecommender(args: {
   history?: ChatHistoryMessage[];
 }): Promise<RecommendationResponse> {
   const topK = Math.min(Math.max(args.topK ?? 5, 1), 20);
-  const schemes = await listSchemesDetailed(500);
+  const schemes = await listSchemesDetailed(5000);
   const activeSchemes = schemes.filter((scheme) => scheme.status === "active" || scheme.status === "review");
-  const users = await listBeneficiaryUsersDetailed(1000);
+  const users = await listBeneficiaryUsersDetailed(5000);
   const usersById = new Map(users.map((user) => [user.id, user]));
   const logs = await listRecommendationLogs(1000);
   const schemeNames = activeSchemes.map((scheme) => scheme.name);
@@ -1198,6 +1230,10 @@ ${ruleText}`;
       explanation: deterministicText,
       bundle: eligibleBundles.length > 0 ? eligibleBundles : [scheme.name],
       age: getUserAge(user),
+      dependents: getDependents(user),
+      areaType: getAreaType(user),
+      rationCardType: getRationCardType(user),
+      gender: getGender(user),
       cibilScore: getUserCibilScore(user),
       transactionCount: getUserTransactionCount(user),
     });
@@ -1315,7 +1351,11 @@ Ask follow-up questions for any user and I will explain each score component.`,
       telegramChatId: user.telegram_chat_id,
       annualIncome: user.annual_income,
       householdSize: user.household_size,
+      dependents: getDependents(user),
       location: user.location,
+      areaType: getAreaType(user),
+      rationCardType: getRationCardType(user),
+      gender: getGender(user),
       category: user.category,
       isVulnerable: user.is_vulnerable,
     })),
@@ -1328,6 +1368,10 @@ Ask follow-up questions for any user and I will explain each score component.`,
       financialReadinessScore: user.financialReadinessScore,
       acceptanceProbability: user.acceptanceProbability,
       age: user.age,
+      dependents: user.dependents,
+      areaType: user.areaType,
+      rationCardType: user.rationCardType,
+      gender: user.gender,
       cibilScore: user.cibilScore,
       transactionCount: user.transactionCount,
       explanation: user.explanation,
@@ -1341,6 +1385,10 @@ Ask follow-up questions for any user and I will explain each score component.`,
         schemeRecRate: scheme.rec_rate ?? 50,
         vulnerable: user.isVulnerable,
         annualIncome: user.annualIncome,
+        dependents: user.dependents,
+        areaType: user.areaType,
+        rationCardType: user.rationCardType,
+        gender: user.gender,
         age: user.age,
         cibilScore: user.cibilScore,
         transactionCount: user.transactionCount,

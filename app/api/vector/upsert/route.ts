@@ -36,7 +36,6 @@ export async function POST(request: Request) {
         tag?: string;
         status?: "active" | "draft" | "review" | "archived";
       };
-      action?: "backfill_schemes";
       action?: "backfill_schemes" | "sync_schemes";
       limit?: number;
       status?: "active" | "draft" | "review" | "archived" | "all";

@@ -44,6 +44,10 @@ export type BeneficiaryUser = {
   location: string | null;
   category: string | null;
   is_vulnerable: boolean;
+  dependents: number | null;
+  area_type: string | null;
+  ration_card_type: string | null;
+  gender: string | null;
   criteria: Record<string, unknown> | null;
 };
 
@@ -447,7 +451,7 @@ export async function listBeneficiaryUsersDetailed(limit = 500) {
   const { data, error } = await supabase
     .from("beneficiary_users")
     .select(
-      "id,name,email,mobile,telegram_chat_id,eligibility_tags,annual_income,household_size,location,category,is_vulnerable,criteria"
+      "id,name,email,mobile,telegram_chat_id,eligibility_tags,annual_income,household_size,location,category,is_vulnerable,dependents,area_type,ration_card_type,gender,criteria"
     )
     .order("name", { ascending: true })
     .limit(limit);
@@ -490,7 +494,7 @@ export async function getEligibleUsers(eligibilityTags: string[]) {
   const { data, error } = await supabase
     .from("beneficiary_users")
     .select(
-      "id,name,email,mobile,telegram_chat_id,eligibility_tags,annual_income,household_size,location,category,is_vulnerable,criteria"
+      "id,name,email,mobile,telegram_chat_id,eligibility_tags,annual_income,household_size,location,category,is_vulnerable,dependents,area_type,ration_card_type,gender,criteria"
     )
     .overlaps("eligibility_tags", eligibilityTags);
 
@@ -511,7 +515,7 @@ export async function getUsersByIds(userIds: string[]) {
   const { data, error } = await supabase
     .from("beneficiary_users")
     .select(
-      "id,name,email,mobile,telegram_chat_id,eligibility_tags,annual_income,household_size,location,category,is_vulnerable,criteria"
+      "id,name,email,mobile,telegram_chat_id,eligibility_tags,annual_income,household_size,location,category,is_vulnerable,dependents,area_type,ration_card_type,gender,criteria"
     )
     .in("id", uniqueIds);
 

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { syncSchemeDocuments } from "@/lib/vector-store";
 import {
   RecommenderContext,
   runFinancialRecommender,
 } from "@/lib/recommender-engine";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
+let lastAutoSyncMs = 0;
+const AUTO_SYNC_INTERVAL_MS = 30_000;
 
 type ChatRequest = {
   message?: string;
@@ -21,6 +27,12 @@ export async function POST(request: Request) {
 
     if (!message) {
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
+    }
+
+    const now = Date.now();
+    if (now - lastAutoSyncMs > AUTO_SYNC_INTERVAL_MS) {
+      await syncSchemeDocuments({ status: "all", limit: 5000 });
+      lastAutoSyncMs = now;
     }
 
     const result = await runFinancialRecommender({
