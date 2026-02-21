@@ -9,6 +9,7 @@ const mainNav = [
   { href: "/pages/admin",         label: "Overview",  icon: LayoutDashboard, badge: null,  badgeColor: ""             },
   { href: "/pages/admin/schemes", label: "Schemes",   icon: Layers,          badge: null,  badgeColor: ""             },
   { href: "/pages/admin/logs",    label: "Rec. Logs", icon: MessageSquare,   badge: "3",   badgeColor: "bg-orange-500" },
+  {href:"/pages/admin/chatbot" , label:"Chatbot",icon:MessageSquare,badge:null ,badgeColor:""}
 ];
 
 export default function Sidebar() {

@@ -1,0 +1,17 @@
+[
+  {
+    "title": "PM Kisan Samman Nidhi",
+    "eligibilityTags": ["farmer", "rural", "small-landholder"],
+    "content": "PM Kisan Samman Nidhi provides income support to eligible farmer families in India. Eligible beneficiaries receive INR 6,000 per year in three equal installments. Farmers must complete eKYC and have valid land records. Exclusions include institutional landholders and high-income taxpayers. Beneficiaries can check payment status through the official portal using Aadhaar or account details."
+  },
+  {
+    "title": "Ayushman Bharat PM-JAY",
+    "eligibilityTags": ["low-income", "family", "health"],
+    "content": "Ayushman Bharat PM-JAY offers health insurance coverage up to INR 5 lakh per family per year for secondary and tertiary care hospitalization. The scheme targets economically vulnerable families identified by SECC data. It supports cashless treatment at empaneled public and private hospitals. Beneficiaries should verify eligibility through the PM-JAY portal and obtain an Ayushman card for smoother access."
+  },
+  {
+    "title": "PM Mudra Yojana",
+    "eligibilityTags": ["entrepreneur", "micro-business", "startup"],
+    "content": "PM Mudra Yojana supports micro and small businesses through collateral-free loans under three categories: Shishu up to INR 50,000, Kishor from INR 50,001 to INR 5 lakh, and Tarun from INR 5 lakh to INR 10 lakh. Applicants can apply via banks, NBFCs, and microfinance institutions with business proof, identity, and address documents. Interest rates and repayment terms vary by lender and risk profile."
+  }
+]
