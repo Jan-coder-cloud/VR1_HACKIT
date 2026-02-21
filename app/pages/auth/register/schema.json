@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AULA Registration Form Schema",
+  "description": "Complete schema for user registration in the AULA portal",
+  "type": "object",
+  "required": ["personalInfo", "geographicInfo", "familyInfo", "livelihoodInfo", "financialInfo", "agreed"],
+  "properties": {
+    "personalInfo": {
+      "type": "object",
+      "required": ["fullName", "dateOfBirth", "mobileNumber", "aadhaarNumber", "gender", "maritalStatus"],
+      "properties": {
+        "fullName": { "type": "string", "minLength": 1 },
+        "dateOfBirth": { "type": "string", "format": "date" },
+        "mobileNumber": { "type": "string", "pattern": "^[0-9]{10}$" },
+        "emailAddress": { "type": "string", "format": "email" },
+        "aadhaarNumber": { "type": "string", "pattern": "^[0-9]{12}$" },
+        "panNumber": { "type": "string", "pattern": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$" },
+        "gender": { "enum": ["Male", "Female", "Other"] },
+        "maritalStatus": { "enum": ["Single", "Married"] }
+      }
+    },
+    "geographicInfo": {
+      "type": "object",
+      "required": ["state", "district", "areaType", "rationCardType", "residentialStatus"],
+      "properties": {
+        "state": { "type": "string" },
+        "district": { "type": "string" },
+        "talukBlock": { "type": "string" },
+        "areaType": { "enum": ["Urban", "Rural", "Semi-Urban"] },
+        "rationCardType": { "enum": ["APL", "BPL", "Antyodaya", "None"] },
+        "residentialStatus": { "enum": ["Own House", "Rented", "Temporary Shelter"] }
+      }
+    },
+    "familyInfo": {
+      "type": "object",
+      "required": ["numberOfDependents", "spouseWorking", "seniorCitizenInFamily", "differentlyAbledMember", "primaryEarningMember"],
+      "properties": {
+        "numberOfDependents": { "type": "number", "minimum": 0 },
+        "numberOfChildren": { "type": "number", "minimum": 0 },
+        "spouseWorking": { "enum": ["Yes", "No"] },
+        "seniorCitizenInFamily": { "enum": ["Yes", "No"] },
+        "differentlyAbledMember": { "enum": ["Yes", "No"] },
+        "primaryEarningMember": { "enum": ["Self", "Spouse", "Parent", "Other"] }
+      }
+    },
+    "livelihoodInfo": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["category", "educationLevel", "institutionName", "courseType", "scholarshipReceiving"],
+          "properties": {
+            "category": { "const": "Student" },
+            "educationLevel": { "type": "string" },
+            "institutionName": { "type": "string" },
+            "courseType": { "enum": ["School", "Undergraduate", "Postgraduate", "Diploma"] },
+            "scholarshipReceiving": { "enum": ["Yes", "No"] },
+            "annualFamilyIncome": { "type": "number", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["category", "companyName", "designation", "employmentType", "monthlySalary", "industrySector"],
+          "properties": {
+            "category": { "const": "Working Professional" },
+            "companyName": { "type": "string" },
+            "designation": { "type": "string" },
+            "employmentType": { "enum": ["Permanent", "Contract", "Part-time", "Temporary"] },
+            "yearsOfExperience": { "type": "number", "minimum": 0 },
+            "monthlySalary": { "type": "number", "minimum": 0 },
+            "industrySector": { "enum": ["IT", "Healthcare", "Education", "Manufacturing", "Finance", "Government", "Other"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["category", "businessName", "typeOfBusiness", "monthlyAverageIncome", "businessRegistrationStatus"],
+          "properties": {
+            "category": { "const": "Self-Employed" },
+            "businessName": { "type": "string" },
+            "typeOfBusiness": { "type": "string" },
+            "yearsInBusiness": { "type": "number", "minimum": 0 },
+            "monthlyAverageIncome": { "type": "number", "minimum": 0 },
+            "businessRegistrationStatus": { "enum": ["Registered", "Unregistered"] },
+            "numberOfEmployees": { "type": "number", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["category", "landSize", "cropType", "irrigationType", "landOwnership"],
+          "properties": {
+            "category": { "const": "Farmer" },
+            "landSize": { "type": "number", "minimum": 0, "description": "Land size in acres" },
+            "cropType": { "type": "string" },
+            "irrigationType": { "enum": ["Rain-fed", "Borewell", "Canal", "Mixed"] },
+            "annualAgriculturalIncome": { "type": "number", "minimum": 0 },
+            "landOwnership": { "enum": ["Owned", "Leased", "Sharecropping"] },
+            "livestock": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["category", "employmentExchangeRegistered", "activelySeeking", "highestQualification", "receivingGovtSupport"],
+          "properties": {
+            "category": { "const": "Unemployed" },
+            "lastEmployment": { "type": "string" },
+            "durationOfUnemployment": { "type": "number", "minimum": 0, "description": "Duration in months" },
+            "employmentExchangeRegistered": { "enum": ["Yes", "No"] },
+            "activelySeeking": { "enum": ["Yes", "No"] },
+            "highestQualification": { "type": "string" },
+            "receivingGovtSupport": { "enum": ["Yes", "No"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["category", "age", "receivingPension", "healthCondition", "livingStatus", "sourceOfIncome"],
+          "properties": {
+            "category": { "const": "Senior Citizen" },
+            "age": { "type": "number", "minimum": 60 },
+            "receivingPension": { "enum": ["Yes", "No"] },
+            "pensionAmount": { "type": "number", "minimum": 0 },
+            "healthCondition": { "enum": ["Good", "Fair", "Poor", "Requires Assistance"] },
+            "livingStatus": { "enum": ["With Family", "Alone", "Old Age Home"] },
+            "sourceOfIncome": { "enum": ["Pension", "Savings", "Family Support", "None"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["category", "spouseEmploymentStatus", "additionalIncomeSource", "interestedInSkillTraining"],
+          "properties": {
+            "category": { "const": "Homemaker" },
+            "spouseEmploymentStatus": { "enum": ["Employed", "Unemployed", "Self-Employed"] },
+            "spouseMonthlyIncome": { "type": "number", "minimum": 0 },
+            "numberOfDependents": { "type": "number", "minimum": 0 },
+            "additionalIncomeSource": { "enum": ["Yes", "No"] },
+            "additionalIncome": { "type": "number", "minimum": 0 },
+            "interestedInSkillTraining": { "enum": ["Yes", "No"] }
+          }
+        }
+      ]
+    },
+    "financialInfo": {
+      "type": "object",
+      "required": ["annualHouseholdIncome", "existingInsurance", "existingLoans", "bankAccountLinkedWithAadhaar", "savingsRange"],
+      "properties": {
+        "annualHouseholdIncome": { "type": "number", "minimum": 0 },
+        "existingInsurance": { "enum": ["Yes", "No"] },
+        "existingLoans": { "enum": ["Yes", "No"] },
+        "bankAccountLinkedWithAadhaar": { "enum": ["Yes", "No"] },
+        "savingsRange": { 
+          "enum": [
+            "Below ₹50,000", 
+            "₹50,000 - ₹2,00,000", 
+            "₹2,00,000 - ₹5,00,000", 
+            "Above ₹5,00,000"
+          ] 
+        },
+        "documents": {
+          "type": "object",
+          "properties": {
+            "incomeCertificate": { "type": "string", "description": "File path or base64" },
+            "aadhaarCardCopy": { "type": "string", "description": "File path or base64" },
+            "rationCard": { "type": "string", "description": "File path or base64" },
+            "casteCertificate": { "type": "string", "description": "File path or base64" },
+            "disabilityCertificate": { "type": "string", "description": "File path or base64" },
+            "bankPassbook": { "type": "string", "description": "File path or base64" }
+          }
+        }
+      }
+    },
+    "agreed": { 
+      "type": "boolean", 
+      "const": true,
+      "description": "User must agree to terms and conditions" 
+    }
+  }
+}
