@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿@import "tailwindcss";
 
 :root {
@@ -30,3 +31,15 @@ body {
 .space-orb {
   animation: drift 7s ease-in-out infinite;
 }
+=======
+@import url('https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+
+@import "tailwindcss";
+
+body{
+  background-color: white;
+  font-family: "SN Pro", sans-serif;
+  font-optical-sizing: auto;
+  font-size: 16px;
+}
+>>>>>>> 858bcce03bd1bfd9d6f8b2c2ba72a0149a5080f6
