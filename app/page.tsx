@@ -131,17 +131,17 @@ export default function HomePage() {
   }
 
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-4 py-8 sm:px-6">
+    <main className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col bg-blue-50/40 px-4 py-8 sm:px-6">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="space-orb absolute left-8 top-12 h-40 w-40 rounded-full bg-blue-400/20 blur-3xl" />
-        <div className="space-orb absolute right-6 top-36 h-52 w-52 rounded-full bg-cyan-300/15 blur-3xl" />
-        <div className="space-orb absolute bottom-10 left-1/3 h-44 w-44 rounded-full bg-indigo-400/20 blur-3xl" />
+        <div className="space-orb absolute left-8 top-12 h-40 w-40 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="space-orb absolute right-6 top-36 h-52 w-52 rounded-full bg-blue-600/15 blur-3xl" />
+        <div className="space-orb absolute bottom-10 left-1/3 h-44 w-44 rounded-full bg-blue-700/20 blur-3xl" />
       </div>
 
-      <header className="mb-5 rounded-2xl border border-blue-200/20 bg-white/10 p-5 shadow-[0_20px_60px_rgba(5,20,60,0.45)] backdrop-blur-xl">
-        <p className="text-xs uppercase tracking-[0.2em] text-blue-200/80">Admin Console</p>
-        <h1 className="mt-1 text-2xl font-semibold text-white sm:text-3xl">Scheme Intelligence Chatbot</h1>
-        <p className="mt-2 text-sm text-blue-100/80">Space-blue control surface for scheme lookup, eligibility checks, and notifications.</p>
+      <header className="mb-5 rounded-2xl border border-blue-600/30 bg-blue-500/15 p-5 shadow-[0_20px_60px_rgba(29,78,216,0.25)] backdrop-blur-xl">
+        <p className="text-xs uppercase tracking-[0.2em] text-blue-700">Admin Console</p>
+        <h1 className="mt-1 text-2xl font-semibold text-blue-800 sm:text-3xl">Scheme Intelligence Chatbot</h1>
+        <p className="mt-2 text-sm text-blue-700">Space-blue control surface for scheme lookup, eligibility checks, and notifications.</p>
       </header>
 
       <section className="mb-4 flex flex-wrap gap-2">
@@ -150,27 +150,27 @@ export default function HomePage() {
             key={item}
             type="button"
             onClick={() => setInput(item)}
-            className="rounded-full border border-cyan-200/30 bg-blue-500/20 px-3 py-1.5 text-xs text-blue-50 transition hover:bg-blue-400/30"
+            className="rounded-full border border-blue-700/30 bg-blue-500/20 px-3 py-1.5 text-xs text-blue-800 transition hover:bg-blue-600/30"
           >
             {item}
           </button>
         ))}
       </section>
 
-      <section className="flex-1 space-y-3 rounded-2xl border border-blue-200/20 bg-white/10 p-4 backdrop-blur-xl">
+      <section className="flex-1 space-y-3 rounded-2xl border border-blue-700/25 bg-blue-500/10 p-4 backdrop-blur-xl">
         {messages.map((m, index) => (
           <article
             key={index}
             className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-lg ${
               m.role === "user"
-                ? "ml-auto border border-blue-300/25 bg-gradient-to-r from-blue-600/60 to-indigo-600/60 text-white"
-                : "mr-auto border border-cyan-200/25 bg-slate-900/60 text-blue-50"
+                ? "ml-auto border border-blue-700/35 bg-gradient-to-r from-blue-600/70 to-blue-700/70 text-blue-50"
+                : "mr-auto border border-blue-700/25 bg-blue-800/80 text-blue-50"
             }`}
           >
             <p className="whitespace-pre-wrap">{m.content}</p>
           </article>
         ))}
-        {loading ? <p className="text-sm text-cyan-100/80">Processing request...</p> : null}
+        {loading ? <p className="text-sm text-blue-700">Processing request...</p> : null}
       </section>
 
       <form onSubmit={onSubmit} className="mt-4 flex gap-2">
@@ -178,12 +178,12 @@ export default function HomePage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about schemes, eligibility, or send notifications..."
-          className="flex-1 rounded-xl border border-blue-200/25 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-blue-100/50 outline-none ring-cyan-300/50 focus:ring-2"
+          className="flex-1 rounded-xl border border-blue-700/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-800 placeholder:text-blue-700/60 outline-none ring-blue-600/40 focus:ring-2"
         />
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-900 disabled:opacity-60"
+          className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 px-5 py-3 text-sm font-semibold text-blue-50 disabled:opacity-60"
         >
           Send
         </button>
