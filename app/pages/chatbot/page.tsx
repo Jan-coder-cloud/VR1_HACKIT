@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import MarkdownPreview from '@uiw/react-markdown-preview';
+import { speakText } from "../admin/_lib/tts";
+import { Speech } from 'lucide-react';
 
 const schemeOptions = [
   { value: "overall", label: "Overall Financial Assistant" },
@@ -219,8 +221,18 @@ export default function ChatbotPage() {
                         color: "inherit",
                       }}
                     />
+                    <div className="flex gap-10">
+                      {message.role === "assistant" && <Speech
+                          onClick={() => speakText(message.text, "en-US")}
+                          className="cursor-pointer text-blue-600"
+                       />}
+                        {message.role === "assistant" && <Speech
+                          onClick={() => speakText(message.text, "ta-IN")}
+                          className="cursor-pointer text-green-600"
+                       />}
+                    </div>
                   </div>
-                  
+                
                 </article>
               ))}
             </div>

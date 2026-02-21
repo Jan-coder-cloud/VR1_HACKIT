@@ -22,7 +22,7 @@ export default function Sidebar() {
       <div className="px-5 py-5 border-b border-slate-100 flex items-center gap-3">
         <div className="w-9 h-9 bg-[#0a66c2] rounded-lg flex items-center justify-center text-white font-bold text-sm font-mono flex-shrink-0">S</div>
         <div>
-          <div className="text-[15px] font-bold text-slate-900 tracking-tight">SchemeOS</div>
+          <div className="text-[15px] font-bold text-slate-900 tracking-tight">AULA</div>
           <div className="text-[10px] text-slate-500">Admin Console</div>
         </div>
       </div>

@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <SchemeProvider>
       <LogProvider>   {/* ✅ wrap logs here */}
         <ToastProvider>
-          <div className="flex h-screen overflow-hidden bg-slate-100">
+          <div className="flex h-screen overflow-hidden bg-slate-100 py-20">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden min-w-0">
               <Topbar />

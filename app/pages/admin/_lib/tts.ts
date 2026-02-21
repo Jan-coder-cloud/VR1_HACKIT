@@ -1,11 +1,24 @@
-export function speakText(text: string) {
+export function speakText(text: string, lang : string) {
   if (typeof window === "undefined") return;
 
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 1;
+
+  utterance.lang = lang;
+  utterance.rate = 0.1;
   utterance.pitch = 1;
 
-  window.speechSynthesis.cancel(); // stop previous speech
+  // Select best matching voice
+  const voices = window.speechSynthesis.getVoices();
+
+  const selectedVoice = voices.find(
+    (voice) => voice.lang === lang
+  );
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
+
