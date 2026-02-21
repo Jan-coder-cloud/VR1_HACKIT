@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { upsertDocument, upsertSchemeAndDocument } from "@/lib/vector-store";
+import {
+  backfillSchemeDocuments,
+  syncSchemeDocuments,
+  upsertDocument,
+  upsertSchemeAndDocument,
+} from "@/lib/vector-store";
 
 export const runtime = "nodejs";
 
@@ -31,7 +36,41 @@ export async function POST(request: Request) {
         tag?: string;
         status?: "active" | "draft" | "review" | "archived";
       };
+      action?: "backfill_schemes";
+      action?: "backfill_schemes" | "sync_schemes";
+      limit?: number;
+      status?: "active" | "draft" | "review" | "archived" | "all";
     };
+
+    if (body.action === "backfill_schemes") {
+      const result = await backfillSchemeDocuments({
+        limit: body.limit,
+        status: body.status ?? "all",
+      });
+
+      return NextResponse.json({
+        success: true,
+        action: "backfill_schemes",
+        processed: result.processed,
+        chunksStored: result.chunksStored,
+      });
+    }
+
+    if (body.action === "sync_schemes") {
+      const result = await syncSchemeDocuments({
+        limit: body.limit,
+        status: body.status ?? "all",
+      });
+
+      return NextResponse.json({
+        success: true,
+        action: "sync_schemes",
+        checked: result.checked,
+        reindexed: result.reindexed,
+        skipped: result.skipped,
+        chunksStored: result.chunksStored,
+      });
+    }
 
     if (body.scheme?.id && body.scheme?.name && body.scheme?.category) {
       const result = await upsertSchemeAndDocument({

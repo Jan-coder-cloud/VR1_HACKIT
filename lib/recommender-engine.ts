@@ -46,6 +46,8 @@ type EligibilityRules = {
   requiredRationCard: string | null;
   seniorCitizenRequired: boolean;
   minDependents: number | null;
+  minCibilScore: number | null;
+  minTransactionCount: number | null;
 };
 
 type SchemeMetadata = {
@@ -69,10 +71,14 @@ type RankedUser = {
   isVulnerable: boolean;
   vectorSimilarity: number;
   vulnerabilityScore: number;
+  financialReadinessScore: number;
   acceptanceProbability: number;
   finalScore: number;
   explanation: string;
   bundle: string[];
+  age: number | null;
+  cibilScore: number | null;
+  transactionCount: number | null;
 };
 
 type FairnessMetrics = {
@@ -187,8 +193,9 @@ Recent history:
 ${historyText}
 
 Classify message into one:
-- selection_basis (asks why/how users were selected/ranked/shortlisted)
+- selection_basis (asks why/how users were selected/ranked/shortlisted or version which has similar meanings)
 - scheme_details (asks benefits/eligibility/requirements of scheme)
+
 - list_context_users (asks to list eligible/shortlisted users from current context)
 - none
 
@@ -292,6 +299,12 @@ function toSafeNumber(value: unknown): number | null {
   return null;
 }
 
+function normalizeNumber(value: number | null, min: number, max: number) {
+  if (value === null) return 0;
+  if (max <= min) return 0;
+  return clamp((value - min) / (max - min));
+}
+
 function normalizeString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
@@ -307,6 +320,24 @@ function getCriteriaValue(user: BeneficiaryUser, key: string): unknown {
 
 function getUserAge(user: BeneficiaryUser): number | null {
   return toSafeNumber(getCriteriaValue(user, "age"));
+}
+
+function getUserCibilScore(user: BeneficiaryUser): number | null {
+  const direct = toSafeNumber(getCriteriaValue(user, "cibilScore"));
+  return direct ?? toSafeNumber(getCriteriaValue(user, "creditScore"));
+}
+
+function getUserTransactionCount(user: BeneficiaryUser): number | null {
+  const count = toSafeNumber(getCriteriaValue(user, "pastTransactionCount"));
+  return count ?? toSafeNumber(getCriteriaValue(user, "transactionCount"));
+}
+
+function getUserAverageTransactionAmount(user: BeneficiaryUser): number | null {
+  return toSafeNumber(getCriteriaValue(user, "avgTransactionAmount"));
+}
+
+function getUserTransactionRecencyDays(user: BeneficiaryUser): number | null {
+  return toSafeNumber(getCriteriaValue(user, "lastTransactionDaysAgo"));
 }
 
 function getAreaType(user: BeneficiaryUser): "rural" | "urban" | null {
@@ -337,6 +368,8 @@ function parseEligibilityRules(scheme: SchemeRecord): EligibilityRules {
     requiredRationCard: rationCardRaw?.toLowerCase() ?? null,
     seniorCitizenRequired: normalizeBool(raw.seniorCitizenRequired),
     minDependents: toSafeNumber(raw.minDependents),
+    minCibilScore: toSafeNumber(raw.minCibilScore),
+    minTransactionCount: toSafeNumber(raw.minTransactionCount),
   };
 }
 
@@ -379,6 +412,16 @@ function passStrictEligibility(user: BeneficiaryUser, rules: EligibilityRules) {
   if (rules.minDependents !== null) {
     const dependents = toSafeNumber(getCriteriaValue(user, "dependents"));
     if (dependents === null || dependents < rules.minDependents) return false;
+  }
+
+  if (rules.minCibilScore !== null) {
+    const cibil = getUserCibilScore(user);
+    if (cibil === null || cibil < rules.minCibilScore) return false;
+  }
+
+  if (rules.minTransactionCount !== null) {
+    const transactions = getUserTransactionCount(user);
+    if (transactions === null || transactions < rules.minTransactionCount) return false;
   }
 
   return true;
@@ -430,16 +473,33 @@ function vulnerabilityScore(user: BeneficiaryUser) {
   const householdComponent = clamp((user.household_size ?? 1) / 8);
   const ruralComponent = getAreaType(user) === "rural" ? 1 : 0;
   const vulnerableComponent = user.is_vulnerable ? 1 : 0;
+  const age = getUserAge(user);
+  const ageComponent = age !== null && age >= 60 ? 1 : age !== null && age <= 25 ? 0.5 : 0;
 
   return (
-    vulnerableComponent * 0.45 + incomeComponent * 0.25 + householdComponent * 0.2 + ruralComponent * 0.1
+    vulnerableComponent * 0.4 +
+    incomeComponent * 0.22 +
+    householdComponent * 0.18 +
+    ruralComponent * 0.1 +
+    ageComponent * 0.1
   );
+}
+
+function financialReadinessScore(user: BeneficiaryUser) {
+  const cibil = normalizeNumber(getUserCibilScore(user), 300, 900);
+  const txCount = normalizeNumber(getUserTransactionCount(user), 0, 50);
+  const avgTx = normalizeNumber(getUserAverageTransactionAmount(user), 0, 50000);
+  const txRecencyDays = getUserTransactionRecencyDays(user);
+  const recency = txRecencyDays === null ? 0.4 : clamp((120 - txRecencyDays) / 120);
+
+  return cibil * 0.45 + txCount * 0.25 + avgTx * 0.15 + recency * 0.15;
 }
 
 function acceptanceProbability(args: {
   user: BeneficiaryUser;
   scheme: SchemeRecord;
   logs: Awaited<ReturnType<typeof listRecommendationLogs>>;
+  financialReadiness: number;
 }) {
   const userLogs = args.logs.filter((row) => row.name.toLowerCase() === args.user.name.toLowerCase());
   const schemeLogs = args.logs.filter((row) =>
@@ -452,8 +512,15 @@ function acceptanceProbability(args: {
   const schemeRate = schemeLogs.length > 0 ? acceptedScheme / schemeLogs.length : 0.5;
   const recRate = clamp((args.scheme.rec_rate ?? 50) / 100);
   const engagementFrequency = clamp(userLogs.length / 10);
+  const transactionEngagement = normalizeNumber(getUserTransactionCount(args.user), 0, 50);
 
-  const probability = userRate * 0.35 + schemeRate * 0.25 + recRate * 0.25 + engagementFrequency * 0.15;
+  const probability =
+    userRate * 0.28 +
+    schemeRate * 0.2 +
+    recRate * 0.2 +
+    engagementFrequency * 0.12 +
+    transactionEngagement * 0.1 +
+    args.financialReadiness * 0.1;
   return Math.round(clamp(probability) * 100);
 }
 
@@ -627,6 +694,9 @@ JSON format:
       null,
     seniorCitizenRequired: fallbackRules.seniorCitizenRequired || normalizeBool(llmRules.seniorCitizenRequired),
     minDependents: fallbackRules.minDependents ?? toSafeNumber(llmRules.minDependents),
+    minCibilScore: fallbackRules.minCibilScore ?? toSafeNumber(llmRules.minCibilScore),
+    minTransactionCount:
+      fallbackRules.minTransactionCount ?? toSafeNumber(llmRules.minTransactionCount),
   };
 
   return {
@@ -711,12 +781,57 @@ function deterministicExplainability(args: {
   scheme: SchemeRecord;
   acceptanceProbability: number;
   vectorSimilarity: number;
+  financialReadiness: number;
 }) {
   const area = getAreaType(args.user) ?? "unknown area";
   const income = args.user.annual_income ?? 0;
-  return `Eligible due to rules alignment (income ${income}, ${area}). High priority from vulnerability signals. Predicted acceptance: ${args.acceptanceProbability}%. Vector match: ${Math.round(
+  const age = getUserAge(args.user);
+  const cibil = getUserCibilScore(args.user);
+  const txCount = getUserTransactionCount(args.user);
+  return `Eligible due to rules alignment (income ${income}, ${area}). Profile signals: age ${age ?? "N/A"}, CIBIL ${
+    cibil ?? "N/A"
+  }, transactions ${txCount ?? "N/A"}. Financial readiness ${Math.round(
+    args.financialReadiness * 100
+  )}%. Predicted acceptance: ${args.acceptanceProbability}%. Vector match: ${Math.round(
     args.vectorSimilarity * 100
   )}%.`;
+}
+
+function buildActionTrace(args: {
+  message: string;
+  schemeName: string;
+  eligibleCount: number;
+  rankedUsers: RankedUser[];
+  strictRules: EligibilityRules;
+}) {
+  const top = args.rankedUsers.slice(0, 3);
+  const topText =
+    top.length > 0
+      ? top
+          .map(
+            (item, idx) =>
+              `${idx + 1}) ${item.name}: final=${item.finalScore.toFixed(2)}, accept=${
+                item.acceptanceProbability
+              }%, vector=${(item.vectorSimilarity * 100).toFixed(1)}%, vulnerability=${(
+                item.vulnerabilityScore * 100
+              ).toFixed(1)}%, financial=${(item.financialReadinessScore * 100).toFixed(1)}%`
+          )
+          .join("\n")
+      : "No ranked users.";
+
+  return `Action Trace
+1. Parsed intent from query: "${args.message}".
+2. Resolved scheme context: ${args.schemeName}.
+3. Applied strict filters: age, income, livelihood, area, ration card, dependents, senior-citizen, CIBIL, past transactions.
+4. Strict eligibility passed: ${args.eligibleCount} user(s).
+5. Calculated scoring signals per eligible user:
+   - Vector similarity
+   - Vulnerability score (income + household + rural + vulnerability + age)
+   - Acceptance probability (history + rec rate + engagement + transaction behavior + financial readiness)
+6. Final score = 0.20*eligibility + 0.25*vector + 0.25*vulnerability + 0.30*acceptance.
+7. Ranked output (top users):
+${topText}
+8. Strict rule snapshot: ${JSON.stringify(args.strictRules)}.`;
 }
 
 export async function runFinancialRecommender(args: {
@@ -862,9 +977,10 @@ export async function runFinancialRecommender(args: {
     const schemeLabel = contextScheme?.name ?? args.context?.schemeTitle ?? "current scheme";
     const baseAnswer = `Selection basis for ${schemeLabel}:
 - Strict eligibility checks (age, income, livelihood, area, ration card, senior citizen, dependents)
+- CIBIL score and transaction minimums when configured
 - Vector similarity between scheme and user profile
-- Vulnerability prioritization (income, household size, rural, vulnerable status)
-- Acceptance probability from historical behavior
+- Vulnerability prioritization (income, household size, rural, vulnerable status, age)
+- Acceptance probability from history + engagement + transaction behavior + financial readiness
 Final ranking is weighted and deterministic.
 
 Top ranked users:
@@ -948,6 +1064,8 @@ ${basisText}`;
       `Ration card: ${rules.requiredRationCard ?? "-"}`,
       `Senior citizen required: ${rules.seniorCitizenRequired ? "yes" : "no"}`,
       `Min dependents: ${rules.minDependents ?? "-"}`,
+      `Min CIBIL: ${rules.minCibilScore ?? "-"}`,
+      `Min transaction count: ${rules.minTransactionCount ?? "-"}`,
     ].join("\n");
 
     const baseAnswer = `${scheme.name} details:
@@ -1027,7 +1145,13 @@ ${ruleText}`;
     const userEmbedding = await createEmbedding(userProfileText(user));
     const similarity = cosineSimilarity(mainSchemeEmbedding, userEmbedding);
     const userVulnerability = vulnerabilityScore(user) * vulnerabilityWeightAdjustment;
-    const acceptance = acceptanceProbability({ user, scheme, logs });
+    const financialScore = financialReadinessScore(user);
+    const acceptance = acceptanceProbability({
+      user,
+      scheme,
+      logs,
+      financialReadiness: financialScore,
+    });
 
     const eligibleBundles = schemeEmbeddings
       .filter((item) => passStrictEligibility(user, item.rules))
@@ -1052,6 +1176,7 @@ ${ruleText}`;
       scheme,
       acceptanceProbability: acceptance,
       vectorSimilarity: similarity,
+      financialReadiness: financialScore,
     });
 
     ranked.push({
@@ -1067,10 +1192,14 @@ ${ruleText}`;
       isVulnerable: user.is_vulnerable,
       vectorSimilarity: Number(similarity.toFixed(4)),
       vulnerabilityScore: Number(userVulnerability.toFixed(4)),
+      financialReadinessScore: Number(financialScore.toFixed(4)),
       acceptanceProbability: acceptance,
       finalScore: Number(finalScore.toFixed(4)),
       explanation: deterministicText,
       bundle: eligibleBundles.length > 0 ? eligibleBundles : [scheme.name],
+      age: getUserAge(user),
+      cibilScore: getUserCibilScore(user),
+      transactionCount: getUserTransactionCount(user),
     });
   }
 
@@ -1144,6 +1273,13 @@ ${ruleText}`;
     rankedUsers: limitedRanked,
     intent: intent.intent,
   });
+  const actionTrace = buildActionTrace({
+    message: args.message,
+    schemeName: scheme.name,
+    eligibleCount: strictEligibleUsers.length,
+    rankedUsers: limitedRanked,
+    strictRules,
+  });
 
   return {
     answer: await conversationalAnswer({
@@ -1158,8 +1294,12 @@ ${ruleText}`;
       })),
       baseAnswer:
       intent.intent === "analyze"
-        ? `Scheme analyzed for ${scheme.name}. ${strictEligibleUsers.length} users passed strict eligibility. Ask 'why selected' for ranking basis or 'notify them' to send messages.`
-        : `Top recommendations generated for ${scheme.name}. ${limitedRanked.length} users ranked. Ask 'why selected' for score breakdown.`,
+        ? `Scheme analyzed for ${scheme.name}. ${strictEligibleUsers.length} users passed strict eligibility.
+${actionTrace}
+Ask 'why selected' for ranking basis or 'notify them' to send messages.`
+        : `Top recommendations generated for ${scheme.name}. ${limitedRanked.length} users ranked.
+${actionTrace}
+Ask follow-up questions for any user and I will explain each score component.`,
     }),
     scheme: {
       id: scheme.id,
@@ -1185,7 +1325,11 @@ ${ruleText}`;
       finalScore: user.finalScore,
       vectorSimilarity: user.vectorSimilarity,
       vulnerabilityScore: user.vulnerabilityScore,
+      financialReadinessScore: user.financialReadinessScore,
       acceptanceProbability: user.acceptanceProbability,
+      age: user.age,
+      cibilScore: user.cibilScore,
+      transactionCount: user.transactionCount,
       explanation: user.explanation,
       bundle: user.bundle,
     })),
@@ -1197,6 +1341,10 @@ ${ruleText}`;
         schemeRecRate: scheme.rec_rate ?? 50,
         vulnerable: user.isVulnerable,
         annualIncome: user.annualIncome,
+        age: user.age,
+        cibilScore: user.cibilScore,
+        transactionCount: user.transactionCount,
+        financialReadinessScore: user.financialReadinessScore,
       },
     })),
     fairnessMetrics: fairnessBaseline,

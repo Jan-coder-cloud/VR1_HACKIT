@@ -158,20 +158,182 @@ export async function upsertSchemeAndDocument(scheme: SchemeUpsertPayload) {
   const result = await upsertDocument({
     title: schemeName,
     content: documentText,
-    metadata: {
-      scheme_id: schemeId,
-      title: schemeName,
-      eligibility_tags: Array.isArray(scheme.eligibility?.allowedLivelihood)
-        ? scheme.eligibility?.allowedLivelihood
-        : [],
-      source: "scheme-upsert",
-      status: scheme.status ?? "draft",
-    },
-  });
+      metadata: {
+        scheme_id: schemeId,
+        title: schemeName,
+        eligibility_tags: Array.isArray(scheme.eligibility?.allowedLivelihood)
+          ? scheme.eligibility?.allowedLivelihood
+          : [],
+        source: "scheme-upsert",
+        status: scheme.status ?? "draft",
+        scheme_updated_at: schemeRow.updated_at,
+      },
+    });
 
   return {
     schemeId,
     chunksStored: result.chunksStored,
+  };
+}
+
+function extractEligibilityTagsFromSchemeEligibility(eligibility: Record<string, unknown> | null) {
+  if (!eligibility) return [] as string[];
+
+  const allowed = eligibility.allowedLivelihood;
+  if (Array.isArray(allowed)) {
+    return allowed.filter((item): item is string => typeof item === "string");
+  }
+
+  return [];
+}
+
+function buildSchemeDocumentTextFromRecord(scheme: SchemeRecord) {
+  return [
+    `Scheme: ${scheme.name}`,
+    scheme.summary ? `Summary: ${scheme.summary}` : "",
+    scheme.provider ? `Provider: ${scheme.provider}` : "",
+    scheme.coverage ? `Coverage: ${scheme.coverage}` : "",
+    scheme.premium ? `Premium: ${scheme.premium}` : "",
+    scheme.eligibility_text ? `Eligibility: ${scheme.eligibility_text}` : "",
+    Array.isArray(scheme.benefits) && scheme.benefits.length > 0
+      ? `Benefits: ${scheme.benefits.join("; ")}`
+      : "",
+    Array.isArray(scheme.key_notes) && scheme.key_notes.length > 0
+      ? `Notes: ${scheme.key_notes.join("; ")}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+async function reindexSchemeDocument(args: {
+  scheme: SchemeRecord;
+  source: "scheme-backfill" | "scheme-sync";
+}) {
+  const { scheme, source } = args;
+  const { error: deleteError } = await supabase
+    .from("documents")
+    .delete()
+    .contains("metadata", { scheme_id: scheme.id });
+
+  if (deleteError) {
+    throw new Error(`Failed to clear vectors for scheme ${scheme.id}: ${deleteError.message}`);
+  }
+
+  const content = buildSchemeDocumentTextFromRecord(scheme);
+  const eligibilityTags = extractEligibilityTagsFromSchemeEligibility(
+    (scheme.eligibility ?? null) as Record<string, unknown> | null
+  );
+
+  const result = await upsertDocument({
+    title: scheme.name,
+    content,
+    metadata: {
+      scheme_id: scheme.id,
+      title: scheme.name,
+      eligibility_tags: eligibilityTags,
+      source,
+      status: scheme.status,
+      scheme_updated_at: scheme.updated_at,
+    },
+  });
+
+  return result.chunksStored;
+}
+
+export async function backfillSchemeDocuments(args?: {
+  limit?: number;
+  status?: SchemeRecord["status"] | "all";
+}) {
+  const limit = Math.min(Math.max(args?.limit ?? 500, 1), 5000);
+  const status = args?.status ?? "all";
+
+  let query = supabase
+    .from("schemes")
+    .select(
+      "id,name,category,type,provider,premium,coverage,summary,benefits,key_notes,min_age,max_age,eligibility,eligibility_text,rec_rate,total_recommended,total_accepted,tag,status,created_at,updated_at"
+    )
+    .order("name", { ascending: true })
+    .limit(limit);
+
+  if (status !== "all") {
+    query = query.eq("status", status);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to load schemes for backfill: ${error.message}`);
+  }
+
+  const schemes = (data ?? []) as SchemeRecord[];
+  let processed = 0;
+  let chunksStored = 0;
+
+  for (const scheme of schemes) {
+    const stored = await reindexSchemeDocument({
+      scheme,
+      source: "scheme-backfill",
+    });
+    processed += 1;
+    chunksStored += stored;
+  }
+
+  return {
+    processed,
+    chunksStored,
+  };
+}
+
+export async function syncSchemeDocuments(args?: {
+  limit?: number;
+  status?: SchemeRecord["status"] | "all";
+}) {
+  const limit = Math.min(Math.max(args?.limit ?? 500, 1), 5000);
+  const status = args?.status ?? "all";
+  const allSchemes = await listSchemesDetailed(limit);
+  const schemes =
+    status === "all" ? allSchemes : allSchemes.filter((scheme) => scheme.status === status);
+
+  let checked = 0;
+  let reindexed = 0;
+  let skipped = 0;
+  let chunksStored = 0;
+
+  for (const scheme of schemes) {
+    checked += 1;
+    const { data, error } = await supabase
+      .from("documents")
+      .select("metadata")
+      .contains("metadata", { scheme_id: scheme.id })
+      .limit(1);
+
+    if (error) {
+      throw new Error(`Failed to inspect vectors for scheme ${scheme.id}: ${error.message}`);
+    }
+
+    const row = data?.[0] as { metadata?: Record<string, unknown> } | undefined;
+    const metadata = (row?.metadata ?? {}) as Record<string, unknown>;
+    const indexedAt = typeof metadata.scheme_updated_at === "string" ? metadata.scheme_updated_at : null;
+    const needsReindex = !row || indexedAt !== scheme.updated_at;
+
+    if (!needsReindex) {
+      skipped += 1;
+      continue;
+    }
+
+    const stored = await reindexSchemeDocument({
+      scheme,
+      source: "scheme-sync",
+    });
+    reindexed += 1;
+    chunksStored += stored;
+  }
+
+  return {
+    checked,
+    reindexed,
+    skipped,
+    chunksStored,
   };
 }
 
@@ -224,13 +386,15 @@ export type SchemeRecord = {
   total_accepted: number | null;
   tag: string | null;
   status: "active" | "draft" | "review" | "archived";
+  created_at: string;
+  updated_at: string;
 };
 
 export async function listSchemesDetailed(limit = 200) {
   const { data, error } = await supabase
     .from("schemes")
     .select(
-      "id,name,category,type,provider,premium,coverage,summary,benefits,key_notes,min_age,max_age,eligibility,eligibility_text,rec_rate,total_recommended,total_accepted,tag,status"
+      "id,name,category,type,provider,premium,coverage,summary,benefits,key_notes,min_age,max_age,eligibility,eligibility_text,rec_rate,total_recommended,total_accepted,tag,status,created_at,updated_at"
     )
     .order("name", { ascending: true })
     .limit(limit);
