@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import MarkdownPreview from '@uiw/react-markdown-preview';
 
 const schemeOptions = [
   { value: "overall", label: "Overall Financial Assistant" },
@@ -208,7 +209,18 @@ export default function ChatbotPage() {
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-80">
                     {message.role === "assistant" ? "Guberan" : "You"}
                   </p>
-                  <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+                  <div className="whitespace-pre-wrap text-sm leading-6">
+                    <MarkdownPreview
+                      source={message.text}
+                      data-color-mode="light"
+                      style={{
+                        padding: 5,
+                        backgroundColor: "transparent",
+                        color: "inherit",
+                      }}
+                    />
+                  </div>
+                  
                 </article>
               ))}
             </div>
