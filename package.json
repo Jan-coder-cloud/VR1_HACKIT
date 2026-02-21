@@ -6,12 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "video": "node --env-file=.env --experimental-strip-types components/Video.ts"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.99",
+    "@google/generative-ai": "^0.24.1",
+    "@runwayml/sdk": "^3.11.0",
+    "ai": "^6.0.97",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
