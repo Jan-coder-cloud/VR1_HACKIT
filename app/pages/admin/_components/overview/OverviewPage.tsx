@@ -12,6 +12,8 @@ import SchemeModal from "../../_components/SchemeModal";
 import DeleteModal from "../../_components/DeleteModal";
 import { Scheme } from "../../_lib/data";
 
+
+
 const TIME_TABS = ["Today", "This Week", "This Month", "All Time"];
 
 const CATEGORY_COLORS: Record<string, string> = {
