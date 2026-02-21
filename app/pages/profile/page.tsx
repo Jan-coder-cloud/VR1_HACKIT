@@ -95,47 +95,30 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F4F6F9] flex items-center justify-center">
-        <p className="text-lg text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-blue-600/10 flex items-center justify-center">
+        <p className="text-lg text-slate-600">Loading profile...</p>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F6F9]">
-      {/* HEADER */}
-      <header className="bg-[#0B3D91] text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-lg font-semibold">AULA</h1>
-              <p className="text-sm opacity-80">
-                Personalized Financial & Insurance Scheme Portal
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold">{displayData.personalInfo.fullName}</p>
-              <p className="text-xs opacity-80">ID: {displayData.applicationId}</p>
-            </div>
-          </div>
-        </div>
-      </header>
+    <main className="min-h-screen bg-blue-50/40 py-20">
 
       {/* PROFILE HEADER */}
-      <section className="bg-white border-b">
+      <section className="bg-white border-b border-blue-700/20">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-[#0B3D91] rounded-full flex items-center justify-center text-white text-3xl font-bold">
+            <div className="w-20 h-20 bg-blue-700 rounded-full flex items-center justify-center text-white text-3xl font-bold">
               {displayData.personalInfo.fullName.charAt(0)}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-slate-900">
                 {displayData.personalInfo.fullName}
               </h2>
-              <p className="text-gray-600">
+              <p className="text-slate-600">
                 {displayData.personalInfo.emailAddress}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 Registered on {new Date(displayData.registrationDate).toLocaleDateString('en-IN', {
                   year: 'numeric',
                   month: 'long',
@@ -148,7 +131,7 @@ export default function ProfilePage() {
       </section>
 
       {/* NAVIGATION TABS */}
-      <section className="bg-white border-b sticky top-0 z-10">
+      <section className="bg-white/95 border-b border-blue-700/20 sticky top-0 z-10 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-8 text-sm">
             {[
@@ -163,8 +146,8 @@ export default function ProfilePage() {
                 onClick={() => setActiveSection(tab.id)}
                 className={`py-3 px-2 border-b-2 transition-colors ${
                   activeSection === tab.id
-                    ? 'border-[#0B3D91] text-[#0B3D91] font-semibold'
-                    : 'border-transparent text-gray-600 hover:text-[#0B3D91]'
+                    ? 'border-blue-700 text-blue-700 font-semibold'
+                    : 'border-transparent text-slate-600 hover:text-blue-700'
                 }`}
               >
                 {tab.label}
@@ -176,11 +159,11 @@ export default function ProfilePage() {
 
       {/* CONTENT SECTIONS */}
       <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <div className="bg-white rounded-lg shadow-sm border border-blue-700/20 p-8">
           {/* PERSONAL INFO */}
           {activeSection === 'personal' && (
             <div>
-              <h3 className="text-xl font-semibold text-[#0B3D91] mb-6 flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-blue-700 mb-6 flex items-center gap-2">
                 Personal Information
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
@@ -207,7 +190,7 @@ export default function ProfilePage() {
           {/* GEOGRAPHIC INFO */}
           {activeSection === 'geographic' && (
             <div>
-              <h3 className="text-xl font-semibold text-[#0B3D91] mb-6 flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-blue-700 mb-6 flex items-center gap-2">
                  Geographic Information
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
@@ -230,7 +213,7 @@ export default function ProfilePage() {
           {/* FAMILY INFO */}
           {activeSection === 'family' && (
             <div>
-              <h3 className="text-xl font-semibold text-[#0B3D91] mb-6 flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-blue-700 mb-6 flex items-center gap-2">
                 Family Information
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
@@ -253,11 +236,11 @@ export default function ProfilePage() {
           {/* LIVELIHOOD INFO */}
           {activeSection === 'livelihood' && (
             <div>
-              <h3 className="text-xl font-semibold text-[#0B3D91] mb-6 flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-blue-700 mb-6 flex items-center gap-2">
                 Livelihood Information
               </h3>
               <div className="mb-4">
-                <span className="inline-block bg-[#0B3D91] text-white px-4 py-2 rounded-full text-sm font-semibold">
+                <span className="inline-block bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold">
                   {displayData.livelihoodInfo.category || 'Not Specified'}
                 </span>
               </div>
@@ -338,7 +321,7 @@ export default function ProfilePage() {
           {/* FINANCIAL INFO */}
           {activeSection === 'financial' && (
             <div>
-              <h3 className="text-xl font-semibold text-[#0B3D91] mb-6 flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-blue-700 mb-6 flex items-center gap-2">
                  Financial Information
               </h3>
               <div className="grid md:grid-cols-2 gap-6">
@@ -359,8 +342,8 @@ export default function ProfilePage() {
                   isEditing={isEditing} onChange={(val) => updateEditData('financialInfo', 'savingsRange', val)} />
               </div>
 
-              <div className="mt-8 pt-6 border-t">
-                <h4 className="font-semibold text-gray-900 mb-4">Uploaded Documents</h4>
+              <div className="mt-8 pt-6 border-t border-blue-700/20">
+                <h4 className="font-semibold text-slate-900 mb-4">Uploaded Documents</h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <DocumentStatus label="Income Certificate" status="uploaded" />
                   <DocumentStatus label="Aadhaar Card Copy" status="uploaded" />
@@ -374,11 +357,11 @@ export default function ProfilePage() {
           )}
 
           {/* ACTION BUTTONS */}
-          <div className="mt-8 pt-6 border-t flex gap-4">
+          <div className="mt-8 pt-6 border-t border-blue-700/20 flex gap-4">
             {!isEditing ? (
               <button 
                 onClick={handleEdit}
-                className="px-6 py-2 bg-[#0B3D91] text-white rounded-md hover:bg-[#092f6b] transition-colors"
+                className="px-6 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
               >
                 Edit Profile
               </button>
@@ -392,7 +375,7 @@ export default function ProfilePage() {
                 </button>
                 <button 
                   onClick={handleCancel}
-                  className="px-6 py-2 border border-gray-400 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                  className="px-6 py-2 border border-blue-700/30 text-blue-700 rounded-md hover:bg-blue-600/10 transition-colors"
                 >
                   Cancel
                 </button>
@@ -433,7 +416,7 @@ function InfoField({ label, value, isEditing, onChange, type = "text" }: {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-500 mb-1">
+      <label className="block text-sm font-medium text-slate-500 mb-1">
         {label}
       </label>
       {isEditing && onChange ? (
@@ -441,10 +424,10 @@ function InfoField({ label, value, isEditing, onChange, type = "text" }: {
           type={type}
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0B3D91] text-gray-900"
+          className="w-full px-3 py-2 border border-blue-700/30 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-700 text-slate-900 bg-white"
         />
       ) : (
-        <p className="text-base text-gray-900 font-medium">
+        <p className="text-base text-slate-900 font-medium">
           {getDisplayValue() || 'Not provided'}
         </p>
       )}
@@ -454,14 +437,14 @@ function InfoField({ label, value, isEditing, onChange, type = "text" }: {
 
 function DocumentStatus({ label, status }: { label: string; status: 'uploaded' | 'not-uploaded' }) {
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
-      <span className="text-sm text-gray-700">{label}</span>
+    <div className="flex items-center justify-between p-3 bg-blue-600/10 rounded-md border border-blue-700/20">
+      <span className="text-sm text-slate-700">{label}</span>
       {status === 'uploaded' ? (
         <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
           ✓ Uploaded
         </span>
       ) : (
-        <span className="text-xs bg-gray-200 text-gray-600 px-3 py-1 rounded-full font-medium">
+        <span className="text-xs bg-slate-200 text-slate-600 px-3 py-1 rounded-full font-medium">
           Not uploaded
         </span>
       )}
