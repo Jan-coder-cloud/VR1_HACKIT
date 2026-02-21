@@ -10,6 +10,7 @@ const navItems = [
   { label: "Goals", href: "/pages/goals" },
   { label: "Profile", href: "/pages/profile" },
   { label: "Schemes", href: "/pages/schemes" },
+  {label : "Register", href : "/pages/auth/register"}
 ];
 
 export default function Navbar() {

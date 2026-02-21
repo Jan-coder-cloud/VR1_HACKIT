@@ -1,12 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-
-type ChatMessage = {
-  id: number;
-  role: "user" | "assistant";
-  text: string;
-};
+import { useMemo, useState } from "react";
+import MarkdownPreview from '@uiw/react-markdown-preview';
 
 const schemeOptions = [
   { value: "overall", label: "Overall Financial Assistant" },
@@ -24,58 +19,83 @@ const starterPrompts = [
   "Can I use APY and NPS together?",
 ];
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: 1,
-    role: "assistant",
-    text: "Hi, I am Guberan. I can help with Indian savings and insurance schemes. Choose a chat focus and ask your question.",
-  },
-];
+type ChatStatus = "ready" | "submitted";
 
-const scopeReplyMap: Record<string, string> = {
-  overall:
-    "For an overall plan, start with emergency savings, basic health cover, and then goal-based investments like PPF, NPS, or SIPs.",
-  ppf: "PPF is useful for long-term tax-efficient savings with a 15-year horizon and sovereign backing.",
-  apy: "APY gives a pension-oriented structure for retirement planning, especially useful for unorganized sector workers.",
-  pmjjby:
-    "PMJJBY can provide affordable life cover. It is commonly used as a base layer, with term insurance added for larger family needs.",
-  pmsby:
-    "PMSBY provides low-cost accidental cover and can complement broader life and health insurance planning.",
-  nps: "NPS supports retirement corpus building with market-linked returns and pension-focused withdrawal rules.",
+type ChatMessage = {
+  id: string;
+  role: "assistant" | "user";
+  text: string;
 };
+
+function createMessage(role: ChatMessage["role"], text: string): ChatMessage {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    role,
+    text,
+  };
+}
 
 export default function ChatbotPage() {
   const [chatFocus, setChatFocus] = useState("overall");
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [input, setInput] = useState("");
+  const [draftInput, setDraftInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [status, setStatus] = useState<ChatStatus>("ready");
 
   const focusLabel = useMemo(
     () => schemeOptions.find((option) => option.value === chatFocus)?.label ?? "Overall Financial Assistant",
     [chatFocus],
   );
 
-  const handleSend = (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  const sendUserMessage = async (message: string) => {
+    const userMessage = createMessage("user", message);
+    setMessages((previous) => [...previous, userMessage]);
+    setStatus("submitted");
 
-    const userMessage: ChatMessage = {
-      id: Date.now(),
-      role: "user",
-      text: trimmed,
-    };
-    const assistantMessage: ChatMessage = {
-      id: Date.now() + 1,
-      role: "assistant",
-      text: `[${focusLabel}] ${scopeReplyMap[chatFocus]}`,
-    };
+    try {
+      const response = await fetch("/api/user-bot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message, chatFocus }),
+      });
 
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
-    setInput("");
+      const payload = (await response.json()) as { text?: string; error?: string };
+
+      if (!response.ok || !payload.text) {
+        throw new Error(payload.error ?? "Unable to generate a response.");
+      }
+
+      setMessages((previous) => [...previous, createMessage("assistant", payload.text!)]);
+    } catch (error) {
+      const messageText =
+        error instanceof Error ? error.message : "Something went wrong while contacting the assistant.";
+      setMessages((previous) => [
+        ...previous,
+        createMessage("assistant", `I could not process that request. ${messageText}`),
+      ]);
+    } finally {
+      setStatus("ready");
+    }
   };
 
-  const handleStarterPrompt = (prompt: string) => {
-    setInput(prompt);
+  const handleSend = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmed = draftInput.trim();
+    if (!trimmed || status === "submitted") return;
+
+    setDraftInput("");
+    await sendUserMessage(trimmed);
+  };
+
+  const handleStarterPrompt = async (prompt: string) => {
+    if (status === "submitted") return;
+    setDraftInput("");
+    await sendUserMessage(prompt);
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
   };
 
   return (
@@ -87,7 +107,11 @@ export default function ChatbotPage() {
             <p className="text-xs text-slate-500">India savings and insurance assistant</p>
           </div>
           <div className="border-b border-slate-200 p-4">
-            <button className="w-full rounded-md border border-blue-200 bg-white px-4 py-2 text-left text-sm font-semibold text-blue-900 transition hover:bg-blue-50">
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="w-full rounded-md border border-blue-200 bg-white px-4 py-2 text-left text-sm font-semibold text-blue-900 transition hover:bg-blue-50"
+            >
               + New chat
             </button>
           </div>
@@ -151,7 +175,7 @@ export default function ChatbotPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
-            {messages.length === 1 && (
+            {messages.length === 0 && (
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold text-slate-800 sm:text-3xl">
                   How can I help with your finances today?
@@ -160,7 +184,9 @@ export default function ChatbotPage() {
                   {starterPrompts.map((prompt) => (
                     <button
                       key={prompt}
-                      onClick={() => handleStarterPrompt(prompt)}
+                      onClick={() => {
+                        void handleStarterPrompt(prompt);
+                      }}
                       className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900"
                     >
                       {prompt}
@@ -183,7 +209,18 @@ export default function ChatbotPage() {
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide opacity-80">
                     {message.role === "assistant" ? "Guberan" : "You"}
                   </p>
-                  <p className="text-sm leading-6">{message.text}</p>
+                  <div className="whitespace-pre-wrap text-sm leading-6">
+                    <MarkdownPreview
+                      source={message.text}
+                      data-color-mode="light"
+                      style={{
+                        padding: 5,
+                        backgroundColor: "transparent",
+                        color: "inherit",
+                      }}
+                    />
+                  </div>
+                  
                 </article>
               ))}
             </div>
@@ -193,16 +230,17 @@ export default function ChatbotPage() {
             <form onSubmit={handleSend} className="mx-auto max-w-3xl">
               <div className="flex items-end gap-2 rounded-2xl border border-slate-300 bg-white p-2 shadow-sm">
                 <textarea
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
+                  value={draftInput}
+                  onChange={(event) => setDraftInput(event.target.value)}
                   placeholder={`Message Guberan about ${focusLabel.toLowerCase()}...`}
                   className="max-h-32 min-h-11 flex-1 resize-none border-none px-2 py-2 text-sm text-slate-900 outline-none sm:px-3"
                 />
                 <button
                   type="submit"
-                  className="rounded-xl bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 sm:px-4"
+                  disabled={status === "submitted"}
+                  className="rounded-xl bg-blue-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-blue-400 sm:px-4"
                 >
-                  Send
+                  {status === "submitted" ? "Thinking..." : "Send"}
                 </button>
               </div>
               <p className="mt-2 text-center text-xs text-slate-500">
