@@ -283,29 +283,40 @@ export default function GoalsPage() {
   );
 }
 
-function Input({
-  label,
-  value,
-  onChange,
-  type = "text",
-}: {
-  label: string;
-  value: string | number;
-  onChange: (value: number | string) => void;
-  type?: "text" | "number";
-}) {
+function Input(props: InputProps) {
+  const type = props.type ?? "text";
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-slate-600">{label}</span>
+      <span className="mb-1 block text-slate-600">{props.label}</span>
       <input
         type={type}
-        value={value}
-        onChange={(e) => onChange(type === "number" ? Number(e.target.value) : e.target.value)}
+        value={props.value}
+        onChange={(e) => {
+          if (props.type === "number") {
+            props.onChange(Number(e.target.value));
+            return;
+          }
+          props.onChange(e.target.value);
+        }}
         className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-blue-400"
       />
     </label>
   );
 }
+
+type InputProps =
+  | {
+      label: string;
+      value: string;
+      onChange: (value: string) => void;
+      type?: "text";
+    }
+  | {
+      label: string;
+      value: number;
+      onChange: (value: number) => void;
+      type: "number";
+    };
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
