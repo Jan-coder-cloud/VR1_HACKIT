@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Ravi Kumar",
+    "email": "ravi.kumar@example.com",
+    "mobile": "+919900000001",
+    "eligibilityTags": ["farmer", "rural", "small-landholder"]
+  },
+  {
+    "name": "Sita Devi",
+    "email": "sita.devi@example.com",
+    "mobile": "+919900000002",
+    "eligibilityTags": ["low-income", "family", "health"]
+  },
+  {
+    "name": "Arjun Mehta",
+    "email": "arjun.mehta@example.com",
+    "mobile": "+919900000003",
+    "eligibilityTags": ["entrepreneur", "startup", "micro-business"]
+  },
+  {
+    "name": "Meena Sharma",
+    "email": "meena.sharma@example.com",
+    "mobile": "+919900000004",
+    "eligibilityTags": ["low-income", "farmer", "rural"]
+  }
+]

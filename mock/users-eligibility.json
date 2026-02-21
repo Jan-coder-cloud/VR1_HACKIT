@@ -1,0 +1,70 @@
+[
+  {
+    "name": "Ravi Kumar",
+    "email": "ravi.kumar@example.com",
+    "mobile": "+919900000001",
+    "telegramChatId": "100000001",
+    "location": "Nashik",
+    "category": "farmer",
+    "annualIncome": 145000,
+    "householdSize": 5,
+    "isVulnerable": true,
+    "eligibilityTags": ["farmer", "rural", "small-landholder"],
+    "criteria": {
+      "landOwnership": "small",
+      "hasBankAccount": true,
+      "hasAadhaar": true
+    }
+  },
+  {
+    "name": "Sita Devi",
+    "email": "sita.devi@example.com",
+    "mobile": "+919900000002",
+    "telegramChatId": "100000002",
+    "location": "Patna",
+    "category": "family",
+    "annualIncome": 98000,
+    "householdSize": 6,
+    "isVulnerable": true,
+    "eligibilityTags": ["low-income", "family", "health"],
+    "criteria": {
+      "hasAyushmanCard": false,
+      "seccEligible": true,
+      "hasAadhaar": true
+    }
+  },
+  {
+    "name": "Arjun Mehta",
+    "email": "arjun.mehta@example.com",
+    "mobile": "+919900000003",
+    "telegramChatId": "100000003",
+    "location": "Ahmedabad",
+    "category": "entrepreneur",
+    "annualIncome": 420000,
+    "householdSize": 3,
+    "isVulnerable": false,
+    "eligibilityTags": ["entrepreneur", "startup", "micro-business"],
+    "criteria": {
+      "businessVintageMonths": 14,
+      "creditHistory": "fair",
+      "hasGST": true
+    }
+  },
+  {
+    "name": "Meena Sharma",
+    "email": "meena.sharma@example.com",
+    "mobile": "+919900000004",
+    "telegramChatId": "100000004",
+    "location": "Bhopal",
+    "category": "family",
+    "annualIncome": 120000,
+    "householdSize": 7,
+    "isVulnerable": true,
+    "eligibilityTags": ["low-income", "farmer", "rural", "family"],
+    "criteria": {
+      "widow": true,
+      "hasBankAccount": true,
+      "hasAadhaar": true
+    }
+  }
+]

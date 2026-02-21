@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+﻿# Basic Chatbot + Supabase Vector DB
 
-## Getting Started
+Minimal Next.js chatbot with:
+- Groq for chat completion
+- local open-source embeddings (`Xenova/all-MiniLM-L6-v2`)
+- Supabase pgvector retrieval
 
-First, run the development server:
+## Setup
+
+1. Create env file and fill values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required:
+- `GROQ_API_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `TELEGRAM_BOT_TOKEN`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. In Supabase SQL editor, run:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`supabase/vector.sql`
 
-## Learn More
+3. Install and run:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Note: first embedding request downloads the open-source model and may take time.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. Seed mock data:
 
-## Deploy on Vercel
+```bash
+npm run seed:schemes
+npm run seed:users
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## APIs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `POST /api/vector/upsert`
+  - body:
+  ```json
+  {
+    "title": "Scheme A",
+    "content": "Long scheme text...",
+    "metadata": { "source": "admin-upload" }
+  }
+  ```
+  - response: `{ "success": true, "chunksStored": 4 }`
+
+- `POST /api/chat`
+  - body:
+  ```json
+  {
+    "message": "Who can avail PM Kisan Samman Nidhi?",
+    "topK": 5,
+    "sendMessage": "You are eligible. Please complete your application."
+  }
+  ```
+  - response includes:
+    - `answer`
+    - `scheme`
+    - `eligibleUsers`
+    - `prominentUsers` (ranked by eligibility + vulnerability + income)
+    - `notifications.queued`
+    - `telegramResult` (Telegram delivery attempt metadata)
+    - `citations`
+
+
